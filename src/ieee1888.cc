@@ -52,4 +52,4 @@ void Init(v8::Local<v8::Object> exports) {
                Nan::New<v8::FunctionTemplate>(fetch)->GetFunction());
 }
 
-NODE_MODULE(hello, Init)
+NODE_MODULE(ieee1888, Init)

@@ -6,7 +6,12 @@ extern "C" {
 #include "ieee1888.h"
 }
 
-
+class KeyValMap {
+    public:
+        std::string key;
+        std::string value;
+        KeyValMap(std::string, std::string);
+};
 
 class IEEE1888Main {
     public:

@@ -1,29 +1,51 @@
 
 #include "ieee1888Main.h"
 
+KeyValMap::KeyValMap(std::string inkey, std::string invalue):key(inkey), value(invalue) {
+}
 
 IEEE1888Main::IEEE1888Main() {
 }
 
 IEEE1888Main::~IEEE1888Main() {
 }
-ieee1888_transport* IEEE1888Main::makeFetchLatestContext(std::vector<std::string>& pointIds) {
-    int count=pointIds.size();
+ieee1888_transport* IEEE1888Main::makeWholeTransport(int count) {
     ieee1888_transport* rq_transport=ieee1888_mk_transport();
     ieee1888_header* rq_header=ieee1888_mk_header();
     ieee1888_query* rq_query=ieee1888_mk_query();
     ieee1888_key* rq_key=ieee1888_mk_key_array(count);
-    for(int i=0;i<count;++i){
-        rq_key[i].id=ieee1888_mk_string(pointIds[i].c_str());
-        rq_key[i].attrName=ieee1888_mk_attrNameType("time");
-        rq_key[i].select=ieee1888_mk_selectType("maximum");
-    }
     rq_query->id=ieee1888_mk_new_uuid();
     rq_query->type=ieee1888_mk_queryType("storage");
     rq_query->key=rq_key;
     rq_query->n_key=count;
     rq_header->query=rq_query;
     rq_transport->header=rq_header;
+    return rq_transport;
+}
+ieee1888_transport* IEEE1888Main::makeFetchLatestContext(std::vector<std::string>& pointIds) {
+    int count=pointIds.size();
+    ieee1888_transport* rq_transport=makeWholeTransport(count);
+    ieee1888_key* rq_key=rq_transport->header->query->key;
+    for(int i=0;i<count;++i){
+        rq_key[i].id=ieee1888_mk_string(pointIds[i].c_str());
+        rq_key[i].attrName=ieee1888_mk_attrNameType("time");
+        rq_key[i].select=ieee1888_mk_selectType("maximum");
+    }
+    return rq_transport;
+}
+ieee1888_transport* IEEE1888Main::makeFetchContext(std::vector<std::string>& pointIds, std::vector<std::vector<KeyValMap> >& keyOpt) {
+    int count=pointIds.size();
+    ieee1888_transport* rq_transport=makeWholeTransport(count);
+    ieee1888_key* rq_key=rq_transport->header->query->key;
+    for(int i=0;i<count;++i){
+        rq_key[i].id=ieee1888_mk_string(pointIds[i].c_str());
+        for(int j=0;j<keyOpt[i].size();++j){
+            //switch
+            keyOpt[i][j].key;
+            rq_key[i].attrName=ieee1888_mk_attrNameType("time");
+            rq_key[i].select=ieee1888_mk_selectType("maximum");
+        }
+    }
     return rq_transport;
 }
 ieee1888_body* IEEE1888Main::doFetch(ieee1888_transport* rq_transport, std::string& from) {
@@ -51,7 +73,10 @@ ieee1888_body* IEEE1888Main::doFetch(ieee1888_transport* rq_transport, std::stri
         free(rs_transport);
         return failed;
     }
-    return rs_transport->body;
+    ieee1888_body* body=rs_transport->body;
+    rs_transport->body=NULL;
+    free(rs_transport);
+    return body;
 
     // ieee1888_destroy_objects((ieee1888_object*)rs_transport);
     // free(rs_transport);
